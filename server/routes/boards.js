@@ -30,4 +30,22 @@ router.put('/:id', authenticate, async (req, res) => {
   res.json(board);
 });
 
+router.post('/:id/drag', authenticate, async (req, res) => {
+  const { source, destination } = req.body;
+
+  const board = await Board.findById(req.params.id);
+  if (!board) return res.status(404).send("Board not found");
+
+  const sourceCol = board.columns[source.droppableId];
+  const destCol = board.columns[destination.droppableId];
+
+  const [movedTask] = sourceCol.tasks.splice(source.index, 1);
+  destCol.tasks.splice(destination.index, 0, movedTask);
+
+  board.activity.push(`${req.user.username} moved "${movedTask.title}"`);
+  await board.save();
+
+  res.status(200).json(board);
+});
+
 export default router;
